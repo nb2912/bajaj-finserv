@@ -153,7 +153,7 @@ function App() {
     setLoading(true);
     setError(null);
     try {
-      const data = input.split(',').map(s => s.trim()).filter(s => s !== '');
+      const data = input.split(',').map(s => s.trim());
       const res = await axios.post(API_URL, { data });
       setResponse(res.data);
     } catch {
