@@ -7,7 +7,7 @@ import {
   GitBranch, AlertTriangle, TreePine, Info
 } from 'lucide-react';
 
-const API_URL = 'http://localhost:5000/bfhl';
+const API_URL = 'https://nihalbasaniwal-bfhl.herokuapp.com/bfhl';
 
 /* ─── Style System ─── */
 const colors = {
