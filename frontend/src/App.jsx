@@ -7,7 +7,7 @@ import {
   GitBranch, AlertTriangle, TreePine, Info
 } from 'lucide-react';
 
-const API_URL = 'https://nihalbasaniwal-bfhl.herokuapp.com/bfhl';
+const API_URL = 'https://nihalbasaniwal-bfhl.onrender.com/bfhl';
 
 /* ─── Style System ─── */
 const colors = {
@@ -157,7 +157,7 @@ function App() {
       const res = await axios.post(API_URL, { data });
       setResponse(res.data);
     } catch {
-      setError('Could not connect to the backend. Please ensure the server is running on port 5000.');
+      setError('Could not connect to the API. Please verify the backend URL and ensure the service is live.');
     } finally {
       setLoading(false);
     }
