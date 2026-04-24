@@ -1,56 +1,449 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Send,
-  RefreshCcw,
-  AlertCircle,
-  ChevronRight,
-  ChevronDown,
-  Layers,
-  Terminal,
-  Zap,
-  CheckCircle2,
-  Cpu
+  Play, RefreshCcw, AlertCircle, ChevronRight, ChevronDown,
+  Layers, CheckCircle2, Copy, Trash2, Database, Sparkles
 } from 'lucide-react';
 
 const API_URL = 'http://localhost:5000/bfhl';
 
-const TreeItem = ({ label, children, depth = 0 }) => {
+/* ─── Inline Style Objects ─── */
+const s = {
+  page: {
+    minHeight: '100vh',
+    padding: '60px 24px',
+    display: 'flex',
+    justifyContent: 'center',
+  },
+  container: {
+    width: '100%',
+    maxWidth: 720,
+  },
+  // Header
+  badge: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 6,
+    padding: '4px 14px',
+    borderRadius: 20,
+    background: '#eff6ff',
+    border: '1px solid #dbeafe',
+    color: '#2563eb',
+    fontSize: 11,
+    fontWeight: 700,
+    textTransform: 'uppercase',
+    letterSpacing: '0.08em',
+    marginBottom: 20,
+  },
+  h1: {
+    fontSize: 'clamp(32px, 5vw, 48px)',
+    fontWeight: 800,
+    color: '#0a0a0a',
+    letterSpacing: '-0.03em',
+    lineHeight: 1.1,
+    marginBottom: 12,
+  },
+  subtitle: {
+    fontSize: 17,
+    color: '#737373',
+    fontWeight: 500,
+    marginBottom: 48,
+  },
+  // Card
+  card: {
+    background: '#ffffff',
+    border: '1px solid #e5e5e5',
+    borderRadius: 16,
+    overflow: 'hidden',
+    marginBottom: 24,
+  },
+  textarea: {
+    width: '100%',
+    minHeight: 160,
+    padding: 28,
+    border: 'none',
+    outline: 'none',
+    fontFamily: "'JetBrains Mono', monospace",
+    fontSize: 15,
+    color: '#171717',
+    resize: 'none',
+    lineHeight: 1.7,
+    background: 'transparent',
+  },
+  footer: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: '14px 20px',
+    borderTop: '1px solid #f0f0f0',
+    background: '#fafafa',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  footerLeft: {
+    display: 'flex',
+    gap: 8,
+  },
+  footerRight: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 10,
+  },
+  ghostBtn: {
+    padding: '8px 16px',
+    borderRadius: 8,
+    border: '1px solid #e5e5e5',
+    background: 'white',
+    color: '#737373',
+    fontSize: 12,
+    fontWeight: 700,
+    cursor: 'pointer',
+    transition: 'all 0.15s',
+    textTransform: 'uppercase',
+    letterSpacing: '0.04em',
+  },
+  trashBtn: {
+    width: 40,
+    height: 40,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 10,
+    border: '1px solid #fecaca',
+    background: '#fef2f2',
+    color: '#ef4444',
+    cursor: 'pointer',
+    transition: 'all 0.15s',
+  },
+  runBtn: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+    padding: '10px 24px',
+    borderRadius: 10,
+    border: 'none',
+    background: '#2563eb',
+    color: 'white',
+    fontSize: 14,
+    fontWeight: 700,
+    cursor: 'pointer',
+    transition: 'all 0.15s',
+  },
+  runBtnDisabled: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+    padding: '10px 24px',
+    borderRadius: 10,
+    border: 'none',
+    background: '#d4d4d4',
+    color: '#a3a3a3',
+    fontSize: 14,
+    fontWeight: 700,
+    cursor: 'not-allowed',
+  },
+  // Error
+  errorBox: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 10,
+    padding: '14px 18px',
+    borderRadius: 12,
+    background: '#fef2f2',
+    border: '1px solid #fecaca',
+    color: '#dc2626',
+    fontSize: 13,
+    fontWeight: 600,
+    marginBottom: 24,
+  },
+  // Summary
+  summaryCard: {
+    background: '#ffffff',
+    border: '1px solid #e5e5e5',
+    borderRadius: 16,
+    padding: 32,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 24,
+    marginBottom: 32,
+    flexWrap: 'wrap',
+  },
+  summaryLeft: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 16,
+  },
+  summaryIcon: {
+    width: 52,
+    height: 52,
+    borderRadius: 14,
+    background: '#dcfce7',
+    color: '#16a34a',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  summaryStats: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 32,
+    padding: '16px 24px',
+    background: '#fafafa',
+    borderRadius: 12,
+    border: '1px solid #f0f0f0',
+  },
+  statBlock: {
+    textAlign: 'center',
+  },
+  statLabel: {
+    fontSize: 10,
+    fontWeight: 700,
+    color: '#a3a3a3',
+    textTransform: 'uppercase',
+    letterSpacing: '0.1em',
+    marginBottom: 4,
+  },
+  statVal: {
+    fontSize: 24,
+    fontWeight: 800,
+    lineHeight: 1,
+  },
+  divider: {
+    width: 1,
+    height: 36,
+    background: '#e5e5e5',
+  },
+  // Hierarchy Card
+  hCard: {
+    background: '#ffffff',
+    border: '1px solid #e5e5e5',
+    borderRadius: 16,
+    overflow: 'hidden',
+    marginBottom: 16,
+  },
+  hHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: '20px 24px',
+    borderBottom: '1px solid #f5f5f5',
+    background: '#fafafa',
+  },
+  hHeaderLeft: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 14,
+  },
+  hIcon: (isCycle) => ({
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    background: isCycle ? '#fef2f2' : '#eff6ff',
+    color: isCycle ? '#ef4444' : '#2563eb',
+    flexShrink: 0,
+  }),
+  hTitle: {
+    fontSize: 16,
+    fontWeight: 700,
+    color: '#0a0a0a',
+    marginBottom: 2,
+  },
+  hBadge: (isCycle) => ({
+    display: 'inline-block',
+    padding: '2px 10px',
+    borderRadius: 12,
+    fontSize: 11,
+    fontWeight: 700,
+    textTransform: 'uppercase',
+    letterSpacing: '0.04em',
+    background: isCycle ? '#fef2f2' : '#eff6ff',
+    color: isCycle ? '#dc2626' : '#2563eb',
+  }),
+  hBody: {
+    padding: 24,
+  },
+  cyclePlaceholder: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: 8,
+    padding: '32px 0',
+    color: '#a3a3a3',
+  },
+  // Tree
+  treeItem: {
+    paddingLeft: 20,
+    marginTop: 6,
+  },
+  treeRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+    padding: '6px 10px',
+    borderRadius: 8,
+    cursor: 'pointer',
+    transition: 'background 0.15s',
+    width: 'fit-content',
+  },
+  treeLabel: (isBranch) => ({
+    fontSize: 14,
+    fontFamily: "'JetBrains Mono', monospace",
+    fontWeight: isBranch ? 700 : 500,
+    color: isBranch ? '#0a0a0a' : '#737373',
+  }),
+  // Section Header
+  sectionHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 16,
+    paddingLeft: 4,
+  },
+  sectionTitle: {
+    fontSize: 12,
+    fontWeight: 700,
+    color: '#0a0a0a',
+    textTransform: 'uppercase',
+    letterSpacing: '0.08em',
+  },
+  // Bottom Grid
+  grid2: {
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr',
+    gap: 16,
+    marginTop: 32,
+  },
+  infoCard: {
+    background: '#ffffff',
+    border: '1px solid #e5e5e5',
+    borderRadius: 16,
+    padding: 28,
+  },
+  infoTitle: {
+    fontSize: 10,
+    fontWeight: 700,
+    color: '#a3a3a3',
+    textTransform: 'uppercase',
+    letterSpacing: '0.1em',
+    marginBottom: 20,
+  },
+  infoRow: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '10px 0',
+    borderBottom: '1px solid #f5f5f5',
+  },
+  infoLabel: { fontSize: 13, fontWeight: 500, color: '#737373' },
+  infoValue: { fontSize: 13, fontWeight: 700, color: '#171717' },
+  tagError: {
+    display: 'inline-block',
+    padding: '4px 10px',
+    borderRadius: 8,
+    background: '#fef2f2',
+    border: '1px solid #fecaca',
+    color: '#dc2626',
+    fontSize: 11,
+    fontWeight: 600,
+    fontFamily: "'JetBrains Mono', monospace",
+    marginRight: 6,
+    marginBottom: 6,
+  },
+  tagWarn: {
+    display: 'inline-block',
+    padding: '4px 10px',
+    borderRadius: 8,
+    background: '#fffbeb',
+    border: '1px solid #fed7aa',
+    color: '#d97706',
+    fontSize: 11,
+    fontWeight: 600,
+    fontFamily: "'JetBrains Mono', monospace",
+    marginRight: 6,
+    marginBottom: 6,
+  },
+  muted: { fontSize: 12, color: '#a3a3a3', fontStyle: 'italic' },
+  exportBtn: (copied) => ({
+    width: '100%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    padding: '12px 0',
+    borderRadius: 10,
+    border: copied ? '1px solid #bbf7d0' : '1px solid #e5e5e5',
+    background: copied ? '#f0fdf4' : '#fafafa',
+    color: copied ? '#16a34a' : '#525252',
+    fontSize: 13,
+    fontWeight: 700,
+    cursor: 'pointer',
+    marginTop: 20,
+    transition: 'all 0.2s',
+  }),
+  // Idle
+  idle: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '80px 20px',
+    textAlign: 'center',
+  },
+  idleIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 20,
+    background: '#f5f5f5',
+    border: '1px solid #e5e5e5',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: '#d4d4d4',
+    marginBottom: 20,
+  },
+  // Loading
+  loadingWrap: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: 16,
+    padding: '80px 0',
+  },
+};
+
+/* ─── Tree Component ─── */
+const TreeItem = ({ label, children }) => {
   const [isOpen, setIsOpen] = useState(true);
   const hasChildren = Object.keys(children).length > 0;
 
   return (
-    <div className={`ml-8 my-1.5 ${depth > 0 ? 'node-link' : ''}`}>
-      <motion.div
-        whileHover={{ x: 3 }}
-        className="flex items-center gap-3 cursor-pointer p-1.5 rounded-lg hover:bg-gray-50 transition-colors"
+    <div style={s.treeItem}>
+      <div
+        style={s.treeRow}
         onClick={() => setIsOpen(!isOpen)}
+        onMouseEnter={e => e.currentTarget.style.background = '#f5f5f5'}
+        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
       >
         {hasChildren ? (
-          <span className="text-gray-400">
-            {isOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+          <span style={{ color: '#2563eb' }}>
+            {isOpen ? <ChevronDown size={16} strokeWidth={3} /> : <ChevronRight size={16} strokeWidth={3} />}
           </span>
         ) : (
-          <div className="w-2 h-2 rounded-full bg-blue-500/20 flex items-center justify-center">
-            <div className="w-1 h-1 rounded-full bg-blue-500" />
-          </div>
+          <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#d4d4d4', marginLeft: 4 }} />
         )}
-        <span className={`text-xs font-mono tracking-tight ${
-          hasChildren ? 'font-bold text-blue-700' : 'text-gray-600'
-        }`}>
-          {label}
-        </span>
-      </motion.div>
+        <span style={s.treeLabel(hasChildren)}>{label}</span>
+      </div>
 
       {isOpen && hasChildren && (
-        <motion.div
-          initial={{ height: 0, opacity: 0 }}
-          animate={{ height: 'auto', opacity: 1 }}
-          className="overflow-hidden"
-        >
-          {Object.entries(children).map(([childLabel, grandChildren]) => (
-            <TreeItem key={childLabel} label={childLabel} children={grandChildren} depth={depth + 1} />
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ marginLeft: 16, borderLeft: '2px solid #f0f0f0', paddingLeft: 4 }}>
+          {Object.entries(children).map(([k, v]) => (
+            <TreeItem key={k} label={k} children={v} />
           ))}
         </motion.div>
       )}
@@ -58,37 +451,27 @@ const TreeItem = ({ label, children, depth = 0 }) => {
   );
 };
 
+/* ─── Hierarchy Card ─── */
 const HierarchyCard = ({ hierarchy }) => (
-  <motion.div
-    layout
-    initial={{ opacity: 0, y: 10 }}
-    animate={{ opacity: 1, y: 0 }}
-    className="glass p-8 mb-6"
-  >
-    <div className="flex justify-between items-center mb-6">
-      <div className="flex items-center gap-4">
-        <div className={`w-10 h-10 rounded-2xl flex-center ${hierarchy.has_cycle ? 'bg-amber-50 text-amber-500' : 'bg-blue-50 text-blue-600'}`}>
-          <Layers size={20} />
+  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} style={s.hCard}>
+    <div style={s.hHeader}>
+      <div style={s.hHeaderLeft}>
+        <div style={s.hIcon(hierarchy.has_cycle)}>
+          <Layers size={20} strokeWidth={2.5} />
         </div>
         <div>
-          <h3 className="font-bold text-sm text-gray-900">Hierarchy: {hierarchy.root}</h3>
-          <p className="text-[11px] text-gray-400 font-medium tracking-wide uppercase">
-            {hierarchy.has_cycle ? 'Warning: Cycle Found' : `Success: Depth ${hierarchy.depth}`}
-          </p>
+          <div style={s.hTitle}>Root: {hierarchy.root}</div>
+          <span style={s.hBadge(hierarchy.has_cycle)}>
+            {hierarchy.has_cycle ? 'Cycle Detected' : `Depth ${hierarchy.depth}`}
+          </span>
         </div>
       </div>
-      {hierarchy.has_cycle && (
-        <span className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest bg-amber-50 text-amber-600 border border-amber-100">
-          Cycle
-        </span>
-      )}
     </div>
-
-    <div className="p-6 bg-gray-50/50 rounded-2xl border border-gray-100">
+    <div style={s.hBody}>
       {hierarchy.has_cycle ? (
-        <div className="flex-center flex-col gap-2 py-6 text-gray-400">
-          <AlertCircle size={20} />
-          <span className="text-[11px] font-medium uppercase tracking-wider">Visualization Disabled</span>
+        <div style={s.cyclePlaceholder}>
+          <AlertCircle size={24} />
+          <span style={{ fontSize: 13, fontWeight: 600 }}>Cannot visualize cyclic dependency</span>
         </div>
       ) : (
         <TreeItem label={hierarchy.root} children={hierarchy.tree[hierarchy.root] || {}} />
@@ -97,199 +480,202 @@ const HierarchyCard = ({ hierarchy }) => (
   </motion.div>
 );
 
+/* ─── Main App ─── */
 function App() {
   const [input, setInput] = useState('A->B, A->C, B->D, C->E');
   const [loading, setLoading] = useState(false);
   const [response, setResponse] = useState(null);
   const [error, setError] = useState(null);
+  const [copied, setCopied] = useState(false);
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    e?.preventDefault();
     setLoading(true);
     setError(null);
     try {
       const data = input.split(',').map(s => s.trim()).filter(s => s !== '');
       const res = await axios.post(API_URL, { data });
       setResponse(res.data);
-    } catch (err) {
-      setError('Connection failed. Please ensure the backend server is active.');
+    } catch {
+      setError('Connection failed. Make sure the backend server is running on port 5000.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-white">
-      <div className="container-sm px-6 py-20 md:py-32">
-        
+    <div style={s.page}>
+      <div style={s.container}>
+
         {/* Header */}
-        <header className="text-center mb-20">
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-50 text-blue-600 text-[10px] font-bold uppercase tracking-[0.2em] mb-8"
-          >
-            <Cpu size={12} strokeWidth={3} />
-            Data Hierarchy Processor
-          </motion.div>
-          <motion.h1 
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-4xl md:text-5xl font-black text-gray-900 tracking-tight mb-6 leading-tight"
-          >
-            Structure your data.<br />
-            <span className="text-gray-400">Instantly.</span>
-          </motion.h1>
-          <motion.p 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="text-gray-500 text-lg max-w-md mx-auto leading-relaxed"
-          >
-            A minimal tool to convert relationship strings into structured trees and detect complex cycles.
-          </motion.p>
+        <header style={{ textAlign: 'center', marginBottom: 48 }}>
+          <div style={s.badge}>
+            <Sparkles size={13} />
+            Graph Analytics Engine
+          </div>
+          <h1 style={s.h1}>Hierarchy Processor</h1>
+          <p style={s.subtitle}>Transform flat relationships into structured trees instantly.</p>
         </header>
 
-        {/* Action Area */}
-        <section className="mb-16">
-          <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-            <div className="relative">
-              <textarea
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder="Example: A->B, B->C..."
-                className="h-40 shadow-sm"
-              />
-              <div className="absolute bottom-6 right-6 flex items-center gap-4">
-                <button
-                  type="button"
-                  onClick={() => setInput('A->B, A->C, B->D, C->E, E->F, X->Y, Y->Z, Z->X')}
-                  className="text-[10px] font-bold text-gray-400 hover:text-blue-600 uppercase tracking-widest transition-colors"
-                >
-                  Load Demo
-                </button>
-                <div className="h-4 w-[1px] bg-gray-200" />
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="btn-primary"
-                >
-                  {loading ? <RefreshCcw size={18} className="animate-spin" /> : <Send size={18} />}
-                  <span>{loading ? 'Processing' : 'Process'}</span>
-                </button>
-              </div>
-            </div>
-
-            {error && (
-              <motion.div
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                className="flex items-center gap-2 text-red-500 text-xs font-bold px-2"
+        {/* Input Card */}
+        <div style={s.card}>
+          <textarea
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            placeholder="Enter relationships (e.g., A->B, B->C)..."
+            style={s.textarea}
+            spellCheck="false"
+          />
+          <div style={s.footer}>
+            <div style={s.footerLeft}>
+              <button
+                style={s.ghostBtn}
+                onClick={() => { setInput('A->B, A->C, B->D, C->E'); setResponse(null); }}
+                onMouseEnter={e => { e.currentTarget.style.background = '#f5f5f5'; e.currentTarget.style.color = '#171717'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'white'; e.currentTarget.style.color = '#737373'; }}
               >
-                <AlertCircle size={14} strokeWidth={3} />
-                {error}
-              </motion.div>
-            )}
-          </form>
-        </section>
+                Demo
+              </button>
+              <button
+                style={s.ghostBtn}
+                onClick={() => { setInput('A->B, A->C, B->D, C->E, E->F, X->Y, Y->Z, Z->X, P->Q, Q->R, G->H'); setResponse(null); }}
+                onMouseEnter={e => { e.currentTarget.style.background = '#f5f5f5'; e.currentTarget.style.color = '#171717'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'white'; e.currentTarget.style.color = '#737373'; }}
+              >
+                Stress Test
+              </button>
+            </div>
+            <div style={s.footerRight}>
+              <button style={s.trashBtn} onClick={() => { setInput(''); setResponse(null); setError(null); }} title="Clear">
+                <Trash2 size={18} />
+              </button>
+              <button
+                style={loading || !input.trim() ? s.runBtnDisabled : s.runBtn}
+                onClick={handleSubmit}
+                disabled={loading || !input.trim()}
+                onMouseEnter={e => { if (!loading && input.trim()) e.currentTarget.style.background = '#1d4ed8'; }}
+                onMouseLeave={e => { if (!loading && input.trim()) e.currentTarget.style.background = '#2563eb'; }}
+              >
+                {loading ? <RefreshCcw size={18} className="animate-spin" /> : <Play size={18} fill="white" />}
+                {loading ? 'Processing...' : 'Run Process'}
+              </button>
+            </div>
+          </div>
+        </div>
 
-        {/* Results Flow */}
+        {/* Error */}
+        {error && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={s.errorBox}>
+            <AlertCircle size={18} style={{ flexShrink: 0 }} />
+            {error}
+          </motion.div>
+        )}
+
+        {/* Content Area */}
         <AnimatePresence mode="wait">
-          {response && !loading && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="space-y-10"
-            >
-              {/* Summary Bar */}
-              <div className="flex items-center justify-between border-b border-gray-100 pb-6 px-2">
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 size={16} className="text-blue-600" />
-                  <h2 className="text-xs font-bold uppercase tracking-widest text-gray-900">Analysis Complete</h2>
+          {loading ? (
+            <motion.div key="load" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={s.loadingWrap}>
+              <RefreshCcw size={32} style={{ color: '#2563eb', animation: 'spin 1s linear infinite' }} />
+              <span style={{ fontSize: 12, fontWeight: 700, color: '#a3a3a3', textTransform: 'uppercase', letterSpacing: '0.15em' }}>Analyzing Structure</span>
+              <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+            </motion.div>
+          ) : response ? (
+            <motion.div key="results" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
+
+              {/* Summary */}
+              <div style={s.summaryCard}>
+                <div style={s.summaryLeft}>
+                  <div style={s.summaryIcon}>
+                    <CheckCircle2 size={26} strokeWidth={2.5} />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 18, fontWeight: 800, color: '#0a0a0a' }}>Analysis Complete</div>
+                    <div style={{ fontSize: 13, color: '#737373', fontWeight: 500 }}>Data parsed successfully</div>
+                  </div>
                 </div>
-                <div className="flex gap-6">
-                  <div className="text-center">
-                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter mb-0.5">Trees</p>
-                    <p className="text-sm font-black text-gray-900">{response.summary.total_trees}</p>
+                <div style={s.summaryStats}>
+                  <div style={s.statBlock}>
+                    <div style={s.statLabel}>Trees</div>
+                    <div style={{ ...s.statVal, color: '#0a0a0a' }}>{response.summary.total_trees}</div>
                   </div>
-                  <div className="text-center">
-                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter mb-0.5">Cycles</p>
-                    <p className="text-sm font-black text-amber-500">{response.summary.total_cycles}</p>
+                  <div style={s.divider} />
+                  <div style={s.statBlock}>
+                    <div style={s.statLabel}>Cycles</div>
+                    <div style={{ ...s.statVal, color: '#ef4444' }}>{response.summary.total_cycles}</div>
                   </div>
-                  <div className="text-center">
-                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter mb-0.5">Best Root</p>
-                    <p className="text-sm font-black text-blue-600 font-mono">{response.summary.largest_tree_root || '-'}</p>
+                  <div style={s.divider} />
+                  <div style={s.statBlock}>
+                    <div style={s.statLabel}>Largest</div>
+                    <div style={{ ...s.statVal, color: '#2563eb', fontFamily: "'JetBrains Mono', monospace" }}>{response.summary.largest_tree_root || '—'}</div>
                   </div>
                 </div>
               </div>
 
-              {/* Hierarchy Cards */}
-              <div className="space-y-2">
-                {response.hierarchies.map((h, index) => (
-                  <HierarchyCard key={index} hierarchy={h} />
-                ))}
+              {/* Hierarchies */}
+              <div style={s.sectionHeader}>
+                <Database size={16} style={{ color: '#2563eb' }} />
+                <span style={s.sectionTitle}>Computed Hierarchies</span>
               </div>
+              {response.hierarchies.map((h, i) => (
+                <HierarchyCard key={i} hierarchy={h} />
+              ))}
 
-              {/* Data Footer */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-12">
-                <div className="glass p-8 border-dashed border-gray-200 shadow-none hover:shadow-none">
-                  <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-6">Validation Summary</h4>
-                  <div className="space-y-5">
-                    <div>
-                      <p className="text-[10px] font-bold text-gray-500 mb-2 uppercase tracking-tight">Invalid Entries</p>
-                      <div className="flex flex-wrap gap-2">
-                        {response.invalid_entries.length > 0 ? response.invalid_entries.map((e, i) => (
-                          <span key={i} className="px-3 py-1 bg-red-50 text-red-500 rounded-lg text-[10px] font-bold font-mono border border-red-100">{e}</span>
-                        )) : <span className="text-[10px] text-gray-400 italic">No errors found.</span>}
-                      </div>
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-bold text-gray-500 mb-2 uppercase tracking-tight">Duplicate Edges</p>
-                      <div className="flex flex-wrap gap-2">
-                        {response.duplicate_edges.length > 0 ? response.duplicate_edges.map((e, i) => (
-                          <span key={i} className="px-3 py-1 bg-amber-50 text-amber-600 rounded-lg text-[10px] font-bold font-mono border border-amber-100">{e}</span>
-                        )) : <span className="text-[10px] text-gray-400 italic">No duplicates found.</span>}
-                      </div>
-                    </div>
+              {/* Bottom Grid */}
+              <div style={s.grid2}>
+                <div style={s.infoCard}>
+                  <div style={s.infoTitle}>Validation Audit</div>
+                  <div style={{ marginBottom: 16 }}>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: '#525252', marginBottom: 8 }}>Invalid Entries</div>
+                    {response.invalid_entries.length > 0
+                      ? response.invalid_entries.map((e, i) => <span key={i} style={s.tagError}>{e}</span>)
+                      : <span style={s.muted}>No invalid formats</span>}
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: '#525252', marginBottom: 8 }}>Duplicate Edges</div>
+                    {response.duplicate_edges.length > 0
+                      ? response.duplicate_edges.map((e, i) => <span key={i} style={s.tagWarn}>{e}</span>)
+                      : <span style={s.muted}>No duplicates found</span>}
                   </div>
                 </div>
-                <div className="glass p-8 border-dashed border-gray-200 shadow-none hover:shadow-none flex flex-col justify-between">
-                  <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-6">Identity Verification</h4>
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <span className="text-[11px] text-gray-500 font-medium">Roll Number</span>
-                      <span className="text-xs font-black text-gray-900">{response.college_roll_number}</span>
+
+                <div style={{ ...s.infoCard, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                  <div>
+                    <div style={s.infoTitle}>Session Data</div>
+                    <div style={s.infoRow}>
+                      <span style={s.infoLabel}>Roll Number</span>
+                      <span style={s.infoValue}>{response.college_roll_number}</span>
                     </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-[11px] text-gray-500 font-medium">Email Address</span>
-                      <span className="text-xs font-black text-gray-900">{response.email_id}</span>
-                    </div>
-                    <div className="flex justify-between items-center pt-4 border-t border-gray-100">
-                      <span className="text-[10px] text-gray-400 font-bold uppercase">Session UUID</span>
-                      <span className="text-[10px] font-mono text-gray-500">{response.user_id}</span>
+                    <div style={s.infoRow}>
+                      <span style={s.infoLabel}>Email</span>
+                      <span style={s.infoValue}>{response.email_id}</span>
                     </div>
                   </div>
+                  <button
+                    style={s.exportBtn(copied)}
+                    onClick={() => {
+                      navigator.clipboard.writeText(JSON.stringify(response, null, 2));
+                      setCopied(true);
+                      setTimeout(() => setCopied(false), 2000);
+                    }}
+                  >
+                    {copied ? <CheckCircle2 size={16} /> : <Copy size={16} />}
+                    {copied ? 'Copied to Clipboard' : 'Export Raw JSON'}
+                  </button>
                 </div>
               </div>
             </motion.div>
+          ) : (
+            <motion.div key="idle" initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={s.idle}>
+              <div style={s.idleIcon}>
+                <Database size={32} />
+              </div>
+              <div style={{ fontSize: 18, fontWeight: 700, color: '#171717', marginBottom: 6 }}>Ready to Parse</div>
+              <p style={{ fontSize: 14, color: '#a3a3a3', maxWidth: 340 }}>
+                Enter your graph relationships above and click Run to visualize the hierarchy.
+              </p>
+            </motion.div>
           )}
         </AnimatePresence>
-
-        {/* Initial Empty State */}
-        {!response && !loading && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="flex-center flex-col gap-6 py-24 border-2 border-dashed border-gray-100 rounded-[32px]"
-          >
-            <div className="w-16 h-16 bg-gray-50 rounded-3xl flex-center text-gray-200 shadow-sm">
-              <Terminal size={32} />
-            </div>
-            <div className="text-center">
-              <p className="text-sm font-bold text-gray-900 mb-1">Engine Ready</p>
-              <p className="text-xs text-gray-400 font-medium">Waiting for hierarchical data input...</p>
-            </div>
-          </motion.div>
-        )}
       </div>
     </div>
   );
